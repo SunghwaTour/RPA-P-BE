@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 import my_settings
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,8 +27,28 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+AUTH_USER_MODEL = 'user.User'
+
 
 # Application definition
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+# JWT 설정 (필요에 따라 커스터마이징 가능)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),  # 토큰의 유효기간을 60분으로 설정
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),     # 리프레시 토큰 유효기간을 7일로 설정
+    'AUTH_HEADER_TYPES': ('Bearer',),  # 토큰 전달 방식
+    'USER_ID_FIELD': 'user_id',  # 기본적으로 사용되는 필드를 user_id로 변경
+    'ROTATE_REFRESH_TOKENS': True,                  # 리프레시 토큰을 사용할 때마다 새 토큰 발급
+    'BLACKLIST_AFTER_ROTATION': True,               # 이전 리프레시 토큰을 블랙리스트에 추가하여 사용 불가능하게 함
+}
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -37,6 +58,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'user',
+    'rest_framework_simplejwt.token_blacklist', 
+
 ]
 
 MIDDLEWARE = [
