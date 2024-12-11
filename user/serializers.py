@@ -18,10 +18,11 @@ class SignUpSerializer(serializers.ModelSerializer):
         if data['password'] != data['password_confirm']:
             raise serializers.ValidationError({"password" : "비밀번호가 일치하지 않습니다."})
         
-        # # 전화번호 인증 확인 (캐시에서 인증 코드가 있는지 확인)
-        # phone_number = data.get('phone_number')
-        # if not cache.get(f"verified_{phone_number}"):
-        #     raise serializers.ValidationError({"phone_number": "전화번호 인증이 완료되지 않았습니다."})
+        # 전화번호 인증 확인 (캐시에서 인증 코드가 있는지 확인)
+        phone_number = data.get('phone_number')
+
+        if not cache.get(f"verified_{phone_number}"):
+            raise serializers.ValidationError({"phone_number": "전화번호 인증이 완료되지 않았습니다."})
 
         return data
 

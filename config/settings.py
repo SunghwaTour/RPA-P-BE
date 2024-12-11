@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-
+import os
 from pathlib import Path
 from datetime import timedelta
 import my_settings
@@ -28,6 +28,31 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'user.User'
+
+# Twilio
+TWILIO_ACCOUNT_SID = my_settings.TWILIO_ACCOUNT_SID
+TWILIO_AUTH_TOKEN = my_settings.TWILIO_AUTH_TOKEN
+TWILIO_PHONE_NUMBER = my_settings.TWILIO_PHONE_NUMBER
+
+if os.getenv('DJANGO_ENV') == 'production':
+    # 배포 환경
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': 'redis://127.0.0.1:6379/1',
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            },
+        }
+    }
+else:
+    # 로컬 개발 환경
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'unique-snowflake',
+        }
+    }
 
 
 # Application definition
