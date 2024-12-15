@@ -8,72 +8,87 @@ from rest_framework.permissions import AllowAny
 from django.core.cache import cache
 from django.utils import timezone
 from .twilio import generate_verification_code, send_verification_code
+from .models import User
+from django.core.cache import cache
+from datetime import datetime
 
-
-# 회원가입
-class RegisterView(APIView):
-    permission_classes = [AllowAny] 
-    
-    def post(self, request):
-        serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            # 전화번호 인증이 완료된 사용자만 회원가입 완료
-            user = serializer.save()
-            response = {
-                'result': 'true',
-                'user_id': user.user_id,
-                'message': '회원가입이 완료되었습니다.'
-            }
-            return Response(response, status=status.HTTP_201_CREATED)
-        
-        data = 1 if 'non_field_errors' in serializer.errors else 2
-        sta = status.HTTP_200_OK if 'non_field_errors' in serializer.errors else status.HTTP_400_BAD_REQUEST
-        response = {
-            'result': 'false',
-            'data': data,
-            'message': serializer.errors,
-        }
-        return Response(response, status=sta)
-
-
-# 로그인
-class LoginView(APIView):
-    permission_classes = [AllowAny] 
+# 로그인 or 회원가입
+class UserManagementView(APIView) :
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        
-        if serializer.is_valid():
-            # 사용자 인증
-            user = serializer.validated_data['user']
-            if user is not None:
+        # 아이디, 전화번호 입력받음
+        username = request.data.get('username')
+        phone_number = request.data.get('phone_number')
+
+        if not username or not phone_number:
+            return Response({
+                "result": "false",
+                "message": "사용자명과 전화번호는 필수 항목입니다."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # DB에 사용자 존재하는지 확인
+            user = User.objects.filter(username=username, phone_number=phone_number).first()
+
+            # 이미 회원가입 했으면
+            if user:
+                # 로그인 처리 전에 전화번호 인증 확인
+                if not cache.get(f"verified_{phone_number}"):
+                    return Response({
+                        "result": "false",
+                        "message": "전화번호 인증이 완료되지 않았습니다."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
                 # JWT 토큰 생성
                 refresh = RefreshToken.for_user(user)
                 access_token = str(refresh.access_token)
                 refresh_token = str(refresh)
 
-                response_data = {
-                    'refresh': refresh_token,
-                    'access': access_token,
-                    'user_id': user.user_id,
-                    'username': user.username
-                }
                 return Response({
-                    'result': 'true',
-                    'data': response_data,
-                    'message': '로그인 성공'
+                    "data": {
+                        "refresh": refresh_token,
+                        "access": access_token,
+                        "username": user.username,
+                    },
+                    "message": "로그인 성공",
                 }, status=status.HTTP_200_OK)
+
+            # 처음 로그인할 때
             else:
+                # 회원가입 처리
+                if not cache.get(f"verified_{phone_number}"):
+                    return Response({
+                        "result": "false",
+                        "message": "전화번호 인증이 완료되지 않았습니다."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                user = User.objects.create(
+                    username=username,
+                    phone_number=phone_number,
+                    last_login=datetime.now(),
+                )
+                user.save()
+
+                # JWT 토큰 생성
+                refresh = RefreshToken.for_user(user)
+                access_token = str(refresh.access_token)
+                refresh_token = str(refresh)
+
                 return Response({
-                    'result': 'false',
-                    'message': '잘못된 사용자명 또는 비밀번호입니다.'
-                }, status=status.HTTP_401_UNAUTHORIZED)
+                    "data": {
+                        "refresh": refresh_token,
+                        "access": access_token,
+                        "username": user.username,
+                    },
+                    "message": "회원가입 성공 and 로그인 성공",
+                }, status=status.HTTP_201_CREATED)
 
-        return Response({
-            'result': 'false',
-            'message': serializer.errors
-        }, status=status.HTTP_400_BAD_REQUEST)
-
+        except Exception as e:
+            return Response({
+                "result": "false",
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # 토큰 재발급
 class RefreshTokenView(APIView):

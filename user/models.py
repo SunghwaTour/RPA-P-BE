@@ -31,7 +31,6 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)  # UUID를 기본키로 사용
     username = models.CharField(max_length=255, unique=True)  # 사용자 이름 (중복 불가)
-    password = models.CharField(max_length=255)  # 비밀번호
     phone_number = models.CharField(max_length=15, unique=True)  # 전화번호 (중복 불가) 
     
     is_active = models.BooleanField(default=True)  # 사용자 활성화 여부
