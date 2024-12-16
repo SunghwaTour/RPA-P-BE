@@ -29,6 +29,17 @@ ALLOWED_HOSTS = ['*']
 
 AUTH_USER_MODEL = 'user.User'
 
+CORS_ALLOWED_ORIGINS = [
+    "http://127.0.0.1:8000",
+    "http://localhost:3000",
+    "http://35.232.227.58",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+ALLOWED_HOSTS = ['127.0.0.1', '35.232.227.58']
+
+
+
 # Twilio
 TWILIO_ACCOUNT_SID = my_settings.TWILIO_ACCOUNT_SID
 TWILIO_AUTH_TOKEN = my_settings.TWILIO_AUTH_TOKEN
@@ -83,6 +94,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'corsheaders',
     'user',
     'rest_framework_simplejwt.token_blacklist', 
     'firebase',
@@ -96,6 +108,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
