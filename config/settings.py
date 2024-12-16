@@ -34,6 +34,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://35.232.227.58",
 ]
+CORS_ALLOW_CREDENTIALS = True
+
+ALLOWED_HOSTS = ['127.0.0.1', '35.232.227.58']
 
 
 
