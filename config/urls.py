@@ -19,7 +19,7 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('user/', include('user.urls')),
+    path('users/', include('user.urls')),
     path('', include('firebase.urls')),
     path('', include('dispatch.urls'))
 ]
