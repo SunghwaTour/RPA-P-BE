@@ -3,7 +3,7 @@ from .models import Estimate, EstimateAddress, Pay, VehicleInfo, VirtualEstimate
 from django.db import transaction
 
 # 입력 데이터를 검증하기 위한 Serializer 클래스
-class EstimateSerializer(serializers.Serializer):
+class EstimatePriceSerializer(serializers.Serializer):
     distance = serializers.IntegerField(required=True)  # 거리 (필수 입력값)
     departure_date = serializers.DateField(required=True)  # 출발 날짜 (필수 입력값)
     return_date = serializers.DateField(required=False, allow_null=True)  # 복귀 날짜 (선택 사항)

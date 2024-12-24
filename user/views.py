@@ -20,6 +20,8 @@ class UserManagementView(APIView) :
         username = request.data.get('username')
         phone_number = request.data.get('phone_number')
 
+        
+
         if not username or not phone_number:
             return Response({
                 "result": "false",

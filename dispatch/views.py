@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import datetime
 from rest_framework.permissions import AllowAny
-from .serializers import EstimateSerializer, EstimateDetailSerializer, EstimateListSerializer
+from .serializers import EstimateSerializer, EstimateDetailSerializer, EstimateListSerializer, EstimatePriceSerializer
 from rest_framework import status
 from .models import Estimate
 from django.db import transaction
@@ -10,7 +10,7 @@ from django.core.paginator import Paginator
 from urllib.parse import urlencode
 
 # 견적 금액 조회
-class EstimateView(APIView):
+class EstimatePriceView(APIView):
     permission_classes = [AllowAny]  
 
     # 금액을 계산하는 메서드
@@ -71,7 +71,7 @@ class EstimateView(APIView):
         return int(total_price)  # 최종 요금 반환
 
     def post(self, request):
-        serializer = EstimateSerializer(data=request.data)
+        serializer = EstimatePriceSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)  
         data = serializer.validated_data
 
