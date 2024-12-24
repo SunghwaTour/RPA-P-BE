@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny
 from .serializers import EstimateSerializer, EstimateDetailSerializer
 from rest_framework import status
 from .models import Estimate
+from django.db import transaction
 
 # 견적 금액 조회
 class EstimateView(APIView):
@@ -138,22 +139,14 @@ class EstimateView(APIView):
 
 # 견적 상세
 class EstimateDetailView(APIView):
-    def get(self, request):
-        # 쿼리 파라미터로 estimate_id 가져옴
-        estimate_id = request.query_params.get("estimate_id")
-        if not estimate_id:
-            return Response({
-                'result' : 'false',
-                'message': "견적 id가 필요하다."
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+    def get(self, request, estimate_id):
         # Estimate 객체 가져오기
         try:
             estimate = Estimate.objects.get(id=estimate_id)
         except Estimate.DoesNotExist:
             return Response({
-                'result' : 'false',
-                'message': '찾는 객체가 없다.'
+                'result': 'false',
+                'message': '해당 ID의 견적을 찾을 수 없습니다.'
             }, status=status.HTTP_404_NOT_FOUND)
         
         # serializer를 통해 데이터 직렬화
@@ -161,8 +154,35 @@ class EstimateDetailView(APIView):
         
         # 반환 값
         response_data = {
-            'result' : 'true',
-            'message' : '견적 상세 조회 성공',
-            'data': serializer.data}
+            'result': 'true',
+            'message': '견적 상세 조회에 성공했습니다.',
+            'data': serializer.data
+        }
         
         return Response(response_data, status=status.HTTP_200_OK)
+
+    def delete(self, request, estimate_id):
+        try:
+            # 견적 객체 가져오기
+            estimate = Estimate.objects.get(id=estimate_id)
+            
+            # 트랜잭션 처리로 데이터 삭제
+            with transaction.atomic():
+                estimate.delete()
+            
+            return Response({
+                "result": "true",
+                "message": "견적이 성공적으로 삭제되었습니다."
+            }, status=status.HTTP_200_OK)
+        
+        except Estimate.DoesNotExist:
+            return Response({
+                "result": "false",
+                "message": "해당 ID의 견적이 존재하지 않습니다."
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({
+                "result": "false",
+                "message": f"오류가 발생했습니다: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

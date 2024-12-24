@@ -87,9 +87,9 @@ class Estimate(models.Model):
     departure_date = models.DateTimeField()  # 출발 날짜 및 시간
     return_date = models.DateTimeField(null=True, blank=True)  # 복귀 날짜 및 시간 (선택 사항)
     people_count = models.IntegerField(null=True, blank=True)  # 인원 수
-    pay = models.ForeignKey(Pay, on_delete=models.SET_NULL, null=True, blank=True)  # 결제 정보
-    virtual_estimate = models.ForeignKey(VirtualEstimate, on_delete=models.SET_NULL, null=True, blank=True)  # 가견적 정보
-    vehicle_info = models.ForeignKey(VehicleInfo, on_delete=models.SET_NULL, null=True, blank=True)  # 차량 정보
+    pay = models.ForeignKey(Pay, on_delete=models.CASCADE, null=True, blank=True)  # 결제 정보
+    virtual_estimate = models.ForeignKey(VirtualEstimate, on_delete=models.CASCADE, null=True, blank=True)  # 가견적 정보
+    vehicle_info = models.ForeignKey(VehicleInfo, on_delete=models.CASCADE, null=True, blank=True)  # 차량 정보
     distance = models.IntegerField()  # 거리 (KM)
     is_dispatch_approval = models.BooleanField(default=False)  # 배차 확정 여부
     is_price_change = models.BooleanField(default=False)  # 가격 변경 여부
