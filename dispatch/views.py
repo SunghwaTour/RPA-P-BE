@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from datetime import datetime
 from rest_framework.permissions import AllowAny
 from .serializers import EstimateSerializer
-
+from rest_framework import status
 # 견적 금액 조회
 class EstimateView(APIView):
     permission_classes = [AllowAny]  
@@ -111,3 +111,25 @@ class EstimateView(APIView):
         }
 
         return Response({"data": response_data})  
+
+# 견적 신청
+class EstimateSaveView(APIView):
+    def post(self, request):
+        serializer = EstimateSerializer(data=request.data)
+        if serializer.is_valid():
+            # 저장, 견적 객체 가져오기
+            estimate = serializer.save()
+
+            # RPA-D 관리자 알림
+
+            # TRP 서버에 견적 등록
+
+            response_data = {
+                "data": {
+                    "status": estimate.status 
+                }
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        
+        # 유효하지 않은 데이터 처리
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
