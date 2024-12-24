@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from .serializers import SignUpSerializer, LoginSerializer
 from rest_framework.permissions import AllowAny
 from django.core.cache import cache
 from django.utils import timezone
