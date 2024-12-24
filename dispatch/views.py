@@ -7,6 +7,7 @@ from rest_framework import status
 from .models import Estimate
 from django.db import transaction
 from django.core.paginator import Paginator
+from urllib.parse import urlencode
 
 # 견적 금액 조회
 class EstimateView(APIView):
@@ -165,6 +166,17 @@ class EstimateView(APIView):
 
         # 직렬화
         serializer = EstimateListSerializer(current_page.object_list, many=True)
+        
+        # URL 생성
+        base_url = request.build_absolute_uri('?')
+        next_url = (
+            f"{base_url}{urlencode({'page': current_page.next_page_number(), 'is_finished': is_finished})}"
+            if current_page.has_next() else None
+        )
+        previous_url = (
+            f"{base_url}{urlencode({'page': current_page.previous_page_number(), 'is_finished': is_finished})}"
+            if current_page.has_previous() else None
+        )
 
         # response 데이터 
         response_data = {
@@ -172,8 +184,8 @@ class EstimateView(APIView):
             "message": "견적 리스트 조회 성공",
             "data": {
                 "count": paginator.count,
-                "next": current_page.has_next(),
-                "previous": current_page.has_previous(),
+                "next": next_url,
+                "previous": previous_url,
                 "estimates": serializer.data,
             }
         }
