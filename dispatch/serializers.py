@@ -36,7 +36,7 @@ class VirtualEstimateSerializer(serializers.ModelSerializer):
         fields = ["price"]
 
 # 견적 정보
-class EstimateSerializer(serializers.ModelSerializer):
+class EstimateSaveSerializer(serializers.ModelSerializer):
     departure = EstimateAddressSerializer()
     arrival = EstimateAddressSerializer()
     pay = PaySerializer()
