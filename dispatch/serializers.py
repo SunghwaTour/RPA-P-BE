@@ -125,3 +125,28 @@ class EstimateDetailSerializer(serializers.ModelSerializer):
             "bus_seater",
             "bus_count",
         ]
+
+# 견적 리스트 조회
+class EstimateListSerializer(serializers.ModelSerializer):
+    departure_address = serializers.CharField(source="departure.address")
+    arrival_address = serializers.CharField(source="arrival.address")
+    finished_date = serializers.SerializerMethodField()
+    price = serializers.IntegerField(source="virtual_estimate.price", default=None)
+
+    class Meta:
+        model = Estimate
+        fields = [
+            "id",
+            "price",
+            "status",
+            "departure_address",
+            "arrival_address",
+            "departure_date",
+            "return_date",
+            "finished_date",
+        ]
+    
+    def get_finished_date(self, obj):
+        # finished_date가 None인 경우 빈 문자열 반환
+        return obj.finished_date if obj.finished_date else ""
+

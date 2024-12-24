@@ -1,4 +1,6 @@
 from django.db import models
+from user.models import User
+from django.conf import settings
 
 # 출발지, 도착지, 경유지에 사용될 주소 정보
 class EstimateAddress(models.Model):
@@ -80,6 +82,12 @@ class Estimate(models.Model):
         ("기타", "기타"),
     ]
 
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Django가 설정한 사용자 모델 참조
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
     kinds_of_estimate = models.CharField(max_length=10, choices=KINDS_OF_ESTIMATE_CHOICES)  # 견적 종류
     departure = models.ForeignKey(EstimateAddress, on_delete=models.CASCADE, related_name="departure_address")  # 출발지
     arrival = models.ForeignKey(EstimateAddress, on_delete=models.CASCADE, related_name="arrival_address")  # 도착지
@@ -97,6 +105,8 @@ class Estimate(models.Model):
     purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES, default="기타")  # 견적 목적
     additional_requests = models.TextField(null=True, blank=True)  # 추가 요청 사항
     is_accompany = models.BooleanField(default=False)  # 기사 동행 여부
-    created_date = models.DateTimeField(auto_now_add=True) # 견적 신청을 통해 객체 생성시의 시간간
+    created_date = models.DateTimeField(auto_now_add=True) # 견적 신청을 통해 객체 생성시의 시간
+    is_finished = models.BooleanField(default=False)  # 완료 여부
+    finished_date = models.DateField(null=True, blank=True)  # 완료 날짜 
     def __str__(self):
         return f"Estimate: {self.kinds_of_estimate}, Status: {self.status}"
