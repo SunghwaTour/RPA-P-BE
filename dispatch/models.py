@@ -97,6 +97,6 @@ class Estimate(models.Model):
     purpose = models.CharField(max_length=20, choices=PURPOSE_CHOICES, default="기타")  # 견적 목적
     additional_requests = models.TextField(null=True, blank=True)  # 추가 요청 사항
     is_accompany = models.BooleanField(default=False)  # 기사 동행 여부
-
+    created_at = models.DateTimeField(auto_now_add=True) # 견적 신청을 통해 객체 생성시의 시간간
     def __str__(self):
         return f"Estimate: {self.kinds_of_estimate}, Status: {self.status}"
