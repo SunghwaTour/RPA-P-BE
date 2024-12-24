@@ -35,8 +35,8 @@ class VirtualEstimateSerializer(serializers.ModelSerializer):
         model = VirtualEstimate
         fields = ["price"]
 
-# 견적 정보
-class EstimateSaveSerializer(serializers.ModelSerializer):
+# 견적 신청 정보
+class EstimateSerializer(serializers.ModelSerializer):
     departure = EstimateAddressSerializer()
     arrival = EstimateAddressSerializer()
     pay = PaySerializer()
@@ -95,3 +95,33 @@ class EstimateSaveSerializer(serializers.ModelSerializer):
                 return estimate
         except Exception as e:
             raise serializers.ValidationError(f"An error occurred: {str(e)}")
+
+# 견적 상세 
+class EstimateDetailSerializer(serializers.ModelSerializer):
+    departure_address = serializers.CharField(source="departure.address")
+    arrival_address = serializers.CharField(source="arrival.address")
+    price = serializers.IntegerField(source="virtual_estimate.price", default=None)
+    price_type = serializers.CharField(source="pay.price_type", default=None)
+    depositor_name = serializers.CharField(source="pay.depositor_name", default=None)
+    bus_type = serializers.CharField(source="vehicle_info.bus_type", default=None)
+    bus_seater = serializers.CharField(source="vehicle_info.bus_seater", default=None)
+    bus_count = serializers.IntegerField(source="vehicle_info.bus_count", default=None)
+
+    class Meta:
+        model = Estimate
+        fields = [
+            "created_date",  
+            "status",
+            "departure_date",
+            "return_date",
+            "departure_address",
+            "arrival_address",
+            "is_accompany",
+            "people_count",
+            "price",
+            "price_type",
+            "depositor_name",
+            "bus_type",
+            "bus_seater",
+            "bus_count",
+        ]
