@@ -259,18 +259,32 @@ class NotificationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # 로그인한 사용자의 알림만 조회
+        # 로그인한 사용자와 관련된 알림만 조회
         queryset = Notification.objects.filter(user=request.user).order_by("-created_at")
 
-        # 페이지네이션 처리
+        # 페이징 처리
         paginator = Pagination()
         page = paginator.paginate_queryset(queryset, request)
 
-        # 페이지네이션된 응답 생성
+        # 페이징된 응답 
         if page is not None:
             serializer = NotificationSerializer(page, many=True)
-            return paginator.get_paginated_response(serializer.data)
+            return Response({
+                "data": {
+                    "count": paginator.page.paginator.count,  # 전체 알림 수
+                    "next": paginator.get_next_link(),        # 다음 페이지 URL
+                    "previous": paginator.get_previous_link(), # 이전 페이지 URL
+                    "notification_list": serializer.data      # 알림 데이터
+                }
+            })
 
-        # 페이지네이션 없이 모든 데이터를 반환
+        # 페이징 없이 모든 데이터를 반환
         serializer = NotificationSerializer(queryset, many=True)
-        return Response(serializer.data)
+        return Response({
+            "data": {
+                "count": len(serializer.data),
+                "next": None,
+                "previous": None,
+                "notification_list": serializer.data
+            }
+        })
