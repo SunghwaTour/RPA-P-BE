@@ -14,9 +14,10 @@ class Command(BaseCommand):
         updated_count = 0
 
         for estimate in estimates:
-            if estimate.return_date and estimate.return_date < now().date():
+            # return_date의 날짜와 now의 날짜 비교
+            if estimate.return_date and estimate.return_date.date() < now().date():
                 estimate.is_finished = True
-                estimate.finished_date = estimate.return_date
+                estimate.finished_date = estimate.return_date.date()
                 estimate.save()
                 updated_count += 1
 
