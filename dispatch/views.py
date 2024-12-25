@@ -2,10 +2,15 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import datetime
 from rest_framework.permissions import AllowAny
-from .serializers import EstimateSerializer
+from .serializers import EstimateSerializer, EstimateDetailSerializer, EstimateListSerializer, EstimatePriceSerializer
+from rest_framework import status
+from .models import Estimate
+from django.db import transaction
+from django.core.paginator import Paginator
+from urllib.parse import urlencode
 
 # 견적 금액 조회
-class EstimateView(APIView):
+class EstimatePriceView(APIView):
     permission_classes = [AllowAny]  
 
     # 금액을 계산하는 메서드
@@ -66,7 +71,7 @@ class EstimateView(APIView):
         return int(total_price)  # 최종 요금 반환
 
     def post(self, request):
-        serializer = EstimateSerializer(data=request.data)
+        serializer = EstimatePriceSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)  
         data = serializer.validated_data
 
@@ -111,3 +116,130 @@ class EstimateView(APIView):
         }
 
         return Response({"data": response_data})  
+
+# 견적 신청(POST), 견적 리스트 조회(GET)
+class EstimateView(APIView):
+    
+    # 견적 신청
+    def post(self, request):
+        serializer = EstimateSerializer(data=request.data)
+        if serializer.is_valid():
+            # 저장, 견적 객체 가져오기
+            estimate = serializer.save(user=request.user)
+
+            # RPA-D 관리자 알림
+
+            # TRP 서버에 견적 등록
+
+            response_data = {
+                "data": {
+                    "status": estimate.status 
+                }
+            }
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        
+        # 유효하지 않은 데이터 처리
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # 견적 조회
+    def get(self, request):
+        # 쿼리 파라미터 가져오기
+        page = request.query_params.get("page", 1)
+        is_finished = request.query_params.get("is_finished")
+
+        # 필터링
+        estimates = Estimate.objects.filter(user=request.user)
+        if is_finished == "true":
+            estimates = estimates.filter(is_finished=True)
+        elif is_finished == "false":
+            estimates = estimates.filter(is_finished=False)
+
+        # 페이징 처리
+        paginator = Paginator(estimates, 10)  # 페이지당 10개
+        try:
+            current_page = paginator.page(page)
+        except:
+            return Response({
+                "result": "false",
+                "message": "유효하지 않은 페이지 번호입니다."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # 직렬화
+        serializer = EstimateListSerializer(current_page.object_list, many=True)
+        
+        # URL 생성
+        base_url = request.build_absolute_uri('?')
+        next_url = (
+            f"{base_url}{urlencode({'page': current_page.next_page_number(), 'is_finished': is_finished})}"
+            if current_page.has_next() else None
+        )
+        previous_url = (
+            f"{base_url}{urlencode({'page': current_page.previous_page_number(), 'is_finished': is_finished})}"
+            if current_page.has_previous() else None
+        )
+
+        # response 데이터 
+        response_data = {
+            "result": "true",
+            "message": "견적 리스트 조회 성공",
+            "data": {
+                "count": paginator.count,
+                "next": next_url,
+                "previous": previous_url,
+                "estimates": serializer.data,
+            }
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+
+# 견적 상세 조회(GET), 견적 삭제(DELETE)
+class EstimateDetailView(APIView):
+    # 견적 상세 조회
+    def get(self, request, estimate_id):
+        # Estimate 객체 가져오기
+        try:
+            estimate = Estimate.objects.get(id=estimate_id, user=request.user)
+        except Estimate.DoesNotExist:
+            return Response({
+                'result': 'false',
+                'message': '해당 ID의 견적을 찾을 수 없거나 내가 작성한 견적이 아닙니다.'
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        # serializer를 통해 데이터 직렬화
+        serializer = EstimateDetailSerializer(estimate)
+        
+        # 반환 값
+        response_data = {
+            'result': 'true',
+            'message': '견적 상세 조회에 성공했습니다.',
+            'data': serializer.data
+        }
+        
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    # 견적 삭제
+    def delete(self, request, estimate_id):
+        try:
+            # 견적 객체 가져오기
+            estimate = Estimate.objects.get(id=estimate_id)
+            
+            # 트랜잭션 처리로 데이터 삭제
+            with transaction.atomic():
+                estimate.delete()
+            
+            return Response({
+                "result": "true",
+                "message": "견적이 성공적으로 삭제되었습니다."
+            }, status=status.HTTP_200_OK)
+        
+        except Estimate.DoesNotExist:
+            return Response({
+                "result": "false",
+                "message": "해당 ID의 견적이 존재하지 않습니다."
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+        except Exception as e:
+            return Response({
+                "result": "false",
+                "message": f"오류가 발생했습니다: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

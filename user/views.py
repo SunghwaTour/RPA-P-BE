@@ -3,7 +3,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken, TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from .serializers import SignUpSerializer, LoginSerializer
 from rest_framework.permissions import AllowAny
 from django.core.cache import cache
 from django.utils import timezone
@@ -20,6 +19,8 @@ class UserManagementView(APIView) :
         # 아이디, 전화번호 입력받음
         username = request.data.get('username')
         phone_number = request.data.get('phone_number')
+
+        
 
         if not username or not phone_number:
             return Response({

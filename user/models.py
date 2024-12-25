@@ -1,5 +1,4 @@
 from django.db import models
-import uuid
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
 
 class UserManager(BaseUserManager):
@@ -10,7 +9,7 @@ class UserManager(BaseUserManager):
         user = self.model(username=username, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
-        return user
+        return user 
 
     def create_superuser(self, username, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
@@ -29,7 +28,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_authenticated = True
     is_active = True
 
-    user_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)  # UUID를 기본키로 사용
     username = models.CharField(max_length=255, unique=True)  # 사용자 이름 (중복 불가)
     phone_number = models.CharField(max_length=15, unique=True)  # 전화번호 (중복 불가) 
     
