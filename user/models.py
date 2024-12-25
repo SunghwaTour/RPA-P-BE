@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
+from django.conf import settings
 
 class UserManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -45,3 +46,20 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.username
+
+class Notification(models.Model):
+    CATEGORY_CHOICES = (
+        ("공지사항", "공지사항"),
+        ("견적", "견적"),
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications"
+    )
+    title = models.CharField(max_length=255)  # 알림 제목
+    content = models.TextField()  # 알림 내용
+    is_read = models.BooleanField(default=False)  # 읽음 여부
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)  # 카테고리
+    created_at = models.DateTimeField(auto_now_add=True)  # 생성 시간

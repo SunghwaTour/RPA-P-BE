@@ -74,6 +74,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'config.pagination.Pagination',  # 공통 페이지네이션 클래스
+    'PAGE_SIZE': 10,  # 기본 페이지 크기
 }
 
 # JWT 설정 (필요에 따라 커스터마이징 가능)

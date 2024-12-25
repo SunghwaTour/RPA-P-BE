@@ -6,4 +6,8 @@ urlpatterns = [
     path('refresh-token', views.RefreshTokenView.as_view(), name='refresh_token'), # 토큰 재발급
     path('codes', views.SendCodeView.as_view(), name='send_code'), # 전화번호 인증 전송
     path('codes/verify', views.VerifyCodeView.as_view(), name='verify_code'), # 전화번호 인증 확인
+    path("notifications", views.NotificationListView.as_view(), name="notification-list"), # 알림 목록
+
+    path('send-notification', views.SendNotificationView.as_view(), name='send-notification'),
+    
 ]
