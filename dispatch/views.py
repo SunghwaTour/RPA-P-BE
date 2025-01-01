@@ -133,7 +133,7 @@ class EstimateView(APIView):
                 "title": "새 견적 신청 알림",
                 "content": f"새로운 견적이 신청되었습니다. 견적 ID: {estimate.id}",
                 "category": "일정",
-                "send_datetime": estimate.created_date.strftime('%Y-%m-%d %H:%M:%S'),
+                "send_datetime": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             }
 
             try:
