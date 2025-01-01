@@ -8,6 +8,7 @@ from .models import Estimate
 from django.db import transaction
 from django.core.paginator import Paginator
 from urllib.parse import urlencode
+import requests
 
 # 견적 금액 조회
 class EstimatePriceView(APIView):
@@ -120,26 +121,46 @@ class EstimatePriceView(APIView):
 # 견적 신청(POST), 견적 리스트 조회(GET)
 class EstimateView(APIView):
     
-    # 견적 신청
     def post(self, request):
         serializer = EstimateSerializer(data=request.data)
         if serializer.is_valid():
-            # 저장, 견적 객체 가져오기
+            # 저장, 견적 객체 생성
             estimate = serializer.save(user=request.user)
 
-            # RPA-D 관리자 알림
-
-            # TRP 서버에 견적 등록
-
-            response_data = {
-                "data": {
-                    "status": estimate.status 
-                }
+            # RPA-D 서버 알림 API 호출
+            rpad_url = "http://104.197.230.228:8000/user/notification"
+            notification_data = {
+                "title": "새 견적 신청 알림",
+                "content": f"새로운 견적이 신청되었습니다. 견적 ID: {estimate.id}",
+                "category": "일정",
+                "send_datetime": estimate.created_date.strftime('%Y-%m-%d %H:%M:%S'),
             }
-            return Response(response_data, status=status.HTTP_201_CREATED)
-        
-        # 유효하지 않은 데이터 처리
+
+            try:
+                response = requests.post(rpad_url, json=notification_data)
+
+                if response.status_code != 201:
+
+                    return Response({
+                        "result": "false",
+                        "message": "견적 신청 성공, 그러나 알림 발송 실패"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            except Exception as e:
+
+                return Response({
+                    "result": "false",
+                    "message": f"알림 발송 중 오류 발생: {str(e)}"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            return Response({
+                "result": "true",
+                "message": "견적 신청 성공",
+                "data": {"status": estimate.status}
+            }, status=status.HTTP_201_CREATED)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     
     # 견적 조회
     def get(self, request):
