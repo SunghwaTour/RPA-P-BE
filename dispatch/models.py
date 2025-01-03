@@ -114,6 +114,12 @@ class Estimate(models.Model):
 
 # 리뷰 모델
 class Review(models.Model) :
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Django가 설정한 사용자 모델 참조
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
     estimate = models.ForeignKey(Estimate, on_delete=models.CASCADE, related_name="review_estimate")
     star = models.FloatField()
     detail = models.TextField()

@@ -249,7 +249,7 @@ class ReviewView(APIView):
     def post(self, request):
         serializer = ReviewSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(user=request.user)
             return Response({
                 "result": True,
                 "message": "리뷰가 성공적으로 등록 되었습니다."
