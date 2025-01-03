@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Estimate, EstimateAddress, Pay, VehicleInfo, VirtualEstimate
+from .models import Estimate, EstimateAddress, Pay, VehicleInfo, VirtualEstimate, Review, ReviewFile
 from django.db import transaction
 
 # 입력 데이터를 검증하기 위한 Serializer 클래스
@@ -150,3 +150,30 @@ class EstimateListSerializer(serializers.ModelSerializer):
         # finished_date가 None인 경우 빈 문자열 반환
         return obj.finished_date if obj.finished_date else ""
 
+# 리뷰 파일
+class ReviewFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewFile
+        fields = ['file']
+
+# 리뷰 
+class ReviewSerializer(serializers.ModelSerializer):
+    files = serializers.ListField(
+        child=serializers.ImageField(),  # 파일 리스트 처리
+        write_only=True,                # 입력 시에만 사용
+        required=False                  # 필수 아님
+    )
+
+    class Meta:
+        model = Review
+        fields = ['estimate', 'star', 'detail', 'files']
+
+    def create(self, validated_data):
+        files = validated_data.pop('files', [])
+        review = Review.objects.create(**validated_data)
+
+        # 파일 저장
+        for file in files:
+            ReviewFile.objects.create(review=review, file=file)
+
+        return review
