@@ -22,4 +22,5 @@ urlpatterns = [
     path('users/', include('user.urls')),
     path('', include('firebase.urls')),
     path('', include('dispatch.urls')),
+    path('', include('notice.urls')),
 ]
