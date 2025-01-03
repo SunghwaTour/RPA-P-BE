@@ -110,3 +110,23 @@ class Estimate(models.Model):
     finished_date = models.DateField(null=True, blank=True)  # 완료 날짜 
     def __str__(self):
         return f"Estimate: {self.kinds_of_estimate}, Status: {self.status}"
+
+
+# 리뷰 모델
+class Review(models.Model) :
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # Django가 설정한 사용자 모델 참조
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+    estimate = models.ForeignKey(Estimate, on_delete=models.CASCADE, related_name="review_estimate")
+    star = models.FloatField()
+    detail = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+# 리뷰 파일
+class ReviewFile(models.Model):
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="files")
+    file = models.ImageField(upload_to="review_files/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)

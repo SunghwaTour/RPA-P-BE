@@ -38,7 +38,8 @@ CORS_ALLOW_CREDENTIALS = True
 
 ALLOWED_HOSTS = ['127.0.0.1', '35.232.227.58']
 
-
+MEDIA_URL = '/media/'  # 업로드된 파일에 접근할 URL
+MEDIA_ROOT = '/home/kingbus/rpap/media/'  # MEDIA_ROOT 설정 확인
 
 # Twilio
 TWILIO_ACCOUNT_SID = my_settings.TWILIO_ACCOUNT_SID
