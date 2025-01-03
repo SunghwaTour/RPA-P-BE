@@ -100,6 +100,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist', 
     'firebase',
     'dispatch',
+    'notice',
 ]
 
 MIDDLEWARE = [
