@@ -7,4 +7,5 @@ urlpatterns = [
     path('estimates/<int:estimate_id>', views.EstimateDetailView().as_view()), # 견적 상세 조회(GET), 견적 삭제(DELETE)
 
     path('estimates/review', views.ReviewView().as_view()), # 리뷰 등록(POST)
+    path('estimates/reviews', views.ReviewListView().as_view()), # 리뷰 조회
 ]

@@ -2,12 +2,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import datetime
 from rest_framework.permissions import AllowAny
-from .serializers import EstimateSerializer, EstimateDetailSerializer, EstimateListSerializer, EstimatePriceSerializer, ReviewSerializer
+from .serializers import EstimateSerializer, EstimateDetailSerializer, EstimateListSerializer, EstimatePriceSerializer, ReviewSerializer, ReviewListSerializer
 from rest_framework import status
-from .models import Estimate
+from .models import Estimate, Review
 from django.db import transaction
 from django.core.paginator import Paginator
 from urllib.parse import urlencode
+from rest_framework.generics import ListAPIView
+from config.pagination import Pagination
 
 # 견적 금액 조회
 class EstimatePriceView(APIView):
@@ -260,3 +262,23 @@ class ReviewView(APIView):
             "message": "리뷰 등록 중 오류가 발생했습니다.",
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+
+# 리뷰 조회
+class ReviewListView(ListAPIView):
+    queryset = Review.objects.all().order_by('-created_at')  # 최신순 정렬
+    serializer_class = ReviewListSerializer
+    pagination_class = Pagination
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        return Response({
+            "result": "true",
+            "message": "리뷰 목록 조회 성공",
+            "data": {
+                "count": self.paginator.page.paginator.count,
+                "next": self.paginator.get_next_link(),
+                "previous": self.paginator.get_previous_link(),
+                "reviews": response.data
+            }
+        })   
+    
