@@ -179,6 +179,16 @@ class ReviewSerializer(serializers.ModelSerializer):
 
         return review
 
+    def validate(self, data):
+        # 같은 사용자가 동일한 견적에 대해 리뷰를 작성했는지 확인
+        user = self.context['request'].user
+        estimate = data['estimate']
+        
+        if Review.objects.filter(estimate=estimate, user=user).exists():
+            raise serializers.ValidationError("이미 이 견적에 대해 리뷰를 작성하셨습니다.")
+        
+        return data
+
 # 리뷰 조회 serializer
 class ReviewListSerializer(serializers.ModelSerializer):
     files = serializers.SerializerMethodField()

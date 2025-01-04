@@ -249,7 +249,7 @@ class EstimateDetailView(APIView):
 class ReviewView(APIView):
     # 리뷰 등록
     def post(self, request):
-        serializer = ReviewSerializer(data=request.data)
+        serializer = ReviewSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save(user=request.user)
             return Response({
