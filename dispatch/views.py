@@ -2,12 +2,14 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import datetime
 from rest_framework.permissions import AllowAny
-from .serializers import EstimateSerializer, EstimateDetailSerializer, EstimateListSerializer, EstimatePriceSerializer
+from .serializers import EstimateSerializer, EstimateDetailSerializer, EstimateListSerializer, EstimatePriceSerializer, ReviewSerializer, ReviewListSerializer
 from rest_framework import status
-from .models import Estimate
+from .models import Estimate, Review
 from django.db import transaction
 from django.core.paginator import Paginator
 from urllib.parse import urlencode
+from rest_framework.generics import ListAPIView
+from config.pagination import Pagination
 import requests
 
 # 견적 금액 조회
@@ -264,3 +266,35 @@ class EstimateDetailView(APIView):
                 "message": f"오류가 발생했습니다: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+# 리뷰 등록(POST)
+class ReviewView(APIView):
+    # 리뷰 등록
+    def post(self, request):
+        serializer = ReviewSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response({
+                "result": True,
+                "message": "리뷰가 성공적으로 등록 되었습니다."
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({
+            "result": False,
+            "message": "리뷰 등록 중 오류가 발생했습니다.",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+# 리뷰 조회
+class ReviewListView(ListAPIView):
+    queryset = Review.objects.all().order_by('-created_at')  # 최신순 정렬
+    serializer_class = ReviewListSerializer
+    pagination_class = Pagination
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        return Response({
+            "result": "true",
+            "message": "리뷰 목록 조회 성공",
+            "data": response.data
+        })   
+    

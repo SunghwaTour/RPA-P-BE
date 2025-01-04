@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import Estimate, EstimateAddress, Pay, VehicleInfo, VirtualEstimate
+from .models import Estimate, EstimateAddress, Pay, VehicleInfo, VirtualEstimate, Review, ReviewFile
 from django.db import transaction
+from django.conf import settings
 
 # 입력 데이터를 검증하기 위한 Serializer 클래스
 class EstimatePriceSerializer(serializers.Serializer):
@@ -150,3 +151,67 @@ class EstimateListSerializer(serializers.ModelSerializer):
         # finished_date가 None인 경우 빈 문자열 반환
         return obj.finished_date if obj.finished_date else ""
 
+# 리뷰 파일
+class ReviewFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReviewFile
+        fields = ['file']
+
+# 리뷰 등록 serializer
+class ReviewSerializer(serializers.ModelSerializer):
+    files = serializers.ListField(
+        child=serializers.ImageField(),  # 파일 리스트 처리
+        write_only=True,                # 입력 시에만 사용
+        required=False                  # 필수 아님
+    )
+
+    class Meta:
+        model = Review
+        fields = ['estimate', 'star', 'detail', 'files']
+
+    def create(self, validated_data):
+        files = validated_data.pop('files', [])
+        review = Review.objects.create(**validated_data)
+
+        # 파일 저장
+        for file in files:
+            ReviewFile.objects.create(review=review, file=file)
+
+        return review
+
+    def validate(self, data):
+        # 같은 사용자가 동일한 견적에 대해 리뷰를 작성했는지 확인
+        user = self.context['request'].user
+        estimate = data['estimate']
+        
+        if Review.objects.filter(estimate=estimate, user=user).exists():
+            raise serializers.ValidationError("이미 이 견적에 대해 리뷰를 작성하셨습니다.")
+        
+        return data
+
+# 리뷰 조회 serializer
+class ReviewListSerializer(serializers.ModelSerializer):
+    files = serializers.SerializerMethodField()
+    bus_type = serializers.CharField(source="estimate.vehicle_info.bus_type", read_only=True)
+    bus_seater = serializers.CharField(source="estimate.vehicle_info.bus_seater", read_only=True)
+    departure_date = serializers.CharField(source="estimate.departure_date", read_only=True)
+    return_date = serializers.CharField(source="estimate.return_date", read_only=True)
+    purpose = serializers.CharField(source="estimate.purpose", read_only=True)
+
+    class Meta:
+        model = Review
+        fields = [
+            'id',
+            'bus_type',  # 차량 종류
+            'star',  # 평점
+            'bus_seater',  # 좌석 수
+            'departure_date',  # 출발 날짜짜
+            'return_date',  # 도착 날짜
+            'purpose',  # 목적
+            'detail',  # 후기 텍스트
+            'files'  # 이미지 리스트
+        ]
+
+    def get_files(self, obj):
+        # 각 파일의 URL을 문자열 리스트로 반환
+        return [f"{settings.MEDIA_URL}{file.file}" for file in obj.files.all()]
