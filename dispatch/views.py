@@ -274,11 +274,6 @@ class ReviewListView(ListAPIView):
         return Response({
             "result": "true",
             "message": "리뷰 목록 조회 성공",
-            "data": {
-                "count": self.paginator.page.paginator.count,
-                "next": self.paginator.get_next_link(),
-                "previous": self.paginator.get_previous_link(),
-                "reviews": response.data
-            }
+            "data": response.data
         })   
     
