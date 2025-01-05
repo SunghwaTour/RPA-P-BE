@@ -122,7 +122,6 @@ class EstimatePriceView(APIView):
 
 # 견적 신청(POST), 견적 리스트 조회(GET)
 class EstimateView(APIView):
-    
     def post(self, request):
         serializer = EstimateSerializer(data=request.data)
         if serializer.is_valid():
@@ -139,28 +138,88 @@ class EstimateView(APIView):
             }
 
             try:
-                response = requests.post(rpad_url, json=notification_data)
+                rpad_response = requests.post(rpad_url, json=notification_data)
 
-                if response.status_code != 201:
-
+                if rpad_response.status_code != 201:
                     return Response({
                         "result": "false",
-                        "message": "견적 신청 성공, 그러나 알림 발송 실패"
+                        "message": "견적 신청 성공, 그러나 알림 발송 실패 (RPA-D)"
                     }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
             except Exception as e:
-
                 return Response({
                     "result": "false",
-                    "message": f"알림 발송 중 오류 발생: {str(e)}"
+                    "message": f"알림 발송 중 오류 발생 (RPA-D): {str(e)}"
                 }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+            # TRP 서버에 견적 데이터 전송 추가
+            trp_url = "http://104.197.230.228:8000/dispatch/estimates"  # TRP 서버 URL
+
+            trp_payload = {
+                "departure": estimate.departure.address if estimate.departure and estimate.departure.address else "",
+                "arrival": estimate.arrival.address if estimate.arrival and estimate.arrival.address else "",
+                "departure_date": estimate.departure_date.strftime('%Y-%m-%d %H:%M:%S') if estimate.departure_date else "",
+                "arrival_date": estimate.return_date.strftime('%Y-%m-%d %H:%M:%S') if estimate.return_date else "",
+                "bus_cnt": estimate.vehicle_info.bus_count if estimate.vehicle_info and estimate.vehicle_info.bus_count else 0,
+                
+                "bus_type": estimate.vehicle_info.bus_type if estimate.vehicle_info and estimate.vehicle_info.bus_type else "",
+                "customer": estimate.user.username if estimate.user and estimate.user.username else "",
+                "customer_phone": estimate.user.phone_number if estimate.user and estimate.user.phone_number else "",
+                "price": estimate.virtual_estimate.price if estimate.virtual_estimate and estimate.virtual_estimate.price else 0,
+                "distance": estimate.distance if estimate.distance else 0,
+                
+                "payment_method": estimate.pay.price_type if estimate.pay and estimate.pay.price_type else "",
+                "operation_type": estimate.kinds_of_estimate if estimate.kinds_of_estimate else "",
+                "option": estimate.additional_requests if estimate.additional_requests else "",
+                "references": estimate.stopover if estimate.stopover else "",
+                
+                # 추가적으로 RPAP에 없는 필드 처리
+                "contract_status": "보류",
+                "reservation_company": "",
+                "operating_company": "",
+                "driver_allowance": 0,
+                "cost_type": "",
+
+                "bill_place": "",
+                "collection_type": "",
+                "VAT": "y",
+                "total_price": 0,
+                "ticketing_info": "",
+                
+                "order_type": "",
+                "driver_lease": "",
+                "vehicle_lease": "",
+                "route": "123",
+                "time": "0",
+
+                "night_work_time": "0",
+                "distance_list": "",
+                "time_list": "",
+            }
+
+
+            try:
+                trp_response = requests.post(trp_url, json=trp_payload)
+
+                if trp_response.status_code != 201:
+                    return Response({
+                        "result": "false",
+                        "message": "견적 신청 성공, 그러나 TRP 데이터 전송 실패 : {trp_response.text}"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            except Exception as e:
+                return Response({
+                    "result": "false",
+                    "message": f"TRP 데이터 전송 중 오류 발생: {str(e)}"
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # 최종 응답
             return Response({
                 "result": "true",
                 "message": "견적 신청 성공",
                 "data": {"status": estimate.status}
             }, status=status.HTTP_201_CREATED)
 
+        # 데이터 검증 실패
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     
