@@ -170,13 +170,12 @@ class EstimateView(APIView):
                 
                 "payment_method": estimate.pay.price_type if estimate.pay and estimate.pay.price_type else "",
                 "operation_type": estimate.kinds_of_estimate if estimate.kinds_of_estimate else "",
-                "option": estimate.additional_requests if estimate.additional_requests else "",
-                "references": estimate.stopover if estimate.stopover else "",
-                
+                "references": f"{estimate.stopover if estimate.stopover else ''} / {estimate.additional_requests if estimate.additional_requests else ''}".strip("/"),
+                "route": f"{estimate.departure.address if estimate.departure else ''} > {estimate.arrival.address if estimate.arrival else ''}".strip(">"),
                 # 추가적으로 RPAP에 없는 필드 처리
                 "contract_status": "보류",
-                "reservation_company": "",
-                "operating_company": "",
+                "reservation_company": "성화투어",
+                "operating_company": "성화투어",
                 "driver_allowance": 0,
                 "cost_type": "",
 
@@ -189,12 +188,13 @@ class EstimateView(APIView):
                 "order_type": "",
                 "driver_lease": "",
                 "vehicle_lease": "",
-                "route": "123",
+
                 "time": "0",
 
                 "night_work_time": "0",
                 "distance_list": "",
                 "time_list": "",
+                "option" : "",
             }
 
 
