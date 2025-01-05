@@ -156,6 +156,8 @@ class EstimateView(APIView):
             trp_url = "http://104.197.230.228:8000/dispatch/estimates"  # TRP 서버 URL
 
             trp_payload = {
+                "estimate_id": estimate.id,
+
                 "departure": estimate.departure.address if estimate.departure and estimate.departure.address else "",
                 "arrival": estimate.arrival.address if estimate.arrival and estimate.arrival.address else "",
                 "departure_date": estimate.departure_date.strftime('%Y-%m-%d %H:%M:%S') if estimate.departure_date else "",
