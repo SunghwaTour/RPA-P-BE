@@ -107,7 +107,8 @@ class Estimate(models.Model):
     is_accompany = models.BooleanField(default=False)  # 기사 동행 여부
     created_date = models.DateTimeField(auto_now_add=True) # 견적 신청을 통해 객체 생성시의 시간
     is_finished = models.BooleanField(default=False)  # 완료 여부
-    finished_date = models.DateField(null=True, blank=True)  # 완료 날짜 
+    finished_date = models.DateField(null=True, blank=True)  # 완료 날짜
+    is_value_changed = models.BooleanField(default=False) # 견적 수정 여부
     def __str__(self):
         return f"Estimate: {self.kinds_of_estimate}, Status: {self.status}"
 

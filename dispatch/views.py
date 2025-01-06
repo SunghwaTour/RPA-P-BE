@@ -347,6 +347,10 @@ class EstimateDetailView(APIView):
             # 데이터 저장
             updated_estimate = serializer.save()
 
+            # 변화 여부 저장
+            updated_estimate.is_value_changed = True
+            updated_estimate.save()
+
             return Response({
                 "result": "true",
                 "message": "견적이 성공적으로 수정되었습니다.",
