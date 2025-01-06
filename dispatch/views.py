@@ -466,7 +466,7 @@ class EstimateNotificationScheduler(APIView):
         # 매일 10시 실행
         scheduler.add_job(EstimateNotificationScheduler.send_notifications_for_pending_estimates, 'cron', hour=10, minute=0)
         # 매일 14시 실행
-        scheduler.add_job(EstimateNotificationScheduler.send_notifications_for_pending_estimates, 'cron', hour=14, minute=10)
+        scheduler.add_job(EstimateNotificationScheduler.send_notifications_for_pending_estimates, 'cron', hour=14, minute=0)
         scheduler.start()
 
     # 수동 실행용 API 추가
