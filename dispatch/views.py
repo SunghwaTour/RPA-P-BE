@@ -2,7 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import datetime
 from rest_framework.permissions import AllowAny
-from .serializers import EstimateSerializer, EstimateDetailSerializer, EstimateListSerializer, EstimatePriceSerializer, ReviewSerializer, ReviewListSerializer
+from .serializers import EstimateSerializer, EstimateDetailSerializer, EstimateListSerializer, EstimatePriceSerializer, ReviewSerializer, ReviewListSerializer, EstimateUpdateSerializer
 from rest_framework import status
 from .models import Estimate, Review
 from django.db import transaction
@@ -277,6 +277,7 @@ class EstimateView(APIView):
 
 # 견적 상세 조회(GET), 견적 삭제(DELETE)
 class EstimateDetailView(APIView):
+
     # 견적 상세 조회
     def get(self, request, estimate_id):
         # Estimate 객체 가져오기
@@ -326,6 +327,44 @@ class EstimateDetailView(APIView):
                 "result": "false",
                 "message": f"오류가 발생했습니다: {str(e)}"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+    
+    # trp에서 수정된 정보들 저장
+    permission_classes = [AllowAny]    
+    def patch(self, request, estimate_id):
+        try:
+            # estimate_id를 기반으로 해당 견적 찾기
+            estimate = Estimate.objects.get(id=estimate_id)
+        except Estimate.DoesNotExist:
+            return Response({
+                "result": "false",
+                "message": "해당 견적을 찾을 수 없습니다."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        # Partial 업데이트를 위해 데이터 전달
+        serializer = EstimateUpdateSerializer(estimate, data=request.data, partial=True)
+        if serializer.is_valid():
+            # 데이터 저장
+            updated_estimate = serializer.save()
+
+            return Response({
+                "result": "true",
+                "message": "견적이 성공적으로 수정되었습니다.",
+                "data": {
+                    "bus_type": updated_estimate.vehicle_info.bus_type,
+                    "bus_count": updated_estimate.vehicle_info.bus_count,
+                    "price": updated_estimate.virtual_estimate.price,
+                    "status": updated_estimate.status
+                }
+            }, status=status.HTTP_200_OK)
+
+        # 유효성 검사 실패 시 에러 반환
+        return Response({
+            "result": "false",
+            "message": "입력 데이터가 유효하지 않습니다.",
+            "errors": serializer.errors
+        }, status=status.HTTP_400_BAD_REQUEST)
+
 
 # 리뷰 등록(POST)
 class ReviewView(APIView):
@@ -359,3 +398,5 @@ class ReviewListView(ListAPIView):
             "data": response.data
         })   
     
+
+
