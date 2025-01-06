@@ -8,4 +8,7 @@ urlpatterns = [
 
     path('estimates/review', views.ReviewView().as_view()), # 리뷰 등록(POST)
     path('estimates/reviews', views.ReviewListView().as_view()), # 리뷰 조회
+
+    path('manual_scheduler', views.EstimateNotificationScheduler.as_view(), name='manual_scheduler'), # 테스트용 알림
+
 ]

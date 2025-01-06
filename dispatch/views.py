@@ -11,6 +11,9 @@ from urllib.parse import urlencode
 from rest_framework.generics import ListAPIView
 from config.pagination import Pagination
 import requests
+from apscheduler.schedulers.background import BackgroundScheduler
+from firebase.models import FCMToken
+from firebase.send_message import send_notification
 
 # 견적 금액 조회
 class EstimatePriceView(APIView):
@@ -401,6 +404,87 @@ class ReviewListView(ListAPIView):
             "message": "리뷰 목록 조회 성공",
             "data": response.data
         })   
-    
+
+# 10, 14시마다 유저에게는 입금 요청 알림을, 관리자에게는 입금 확인 알림을 보냄
+class EstimateNotificationScheduler(APIView):
+    RPA_D_SERVER_URL = "http://104.197.230.228:8000/user/notification"  # RPA-D 서버 URL
+
+    @staticmethod
+    def send_user_notification(user, departure_date, return_date):
+        """
+        사용자에게 계약금 입금 요청 알림을 보냅니다.
+        """
+        try:
+            # 날짜 포맷팅 (일까지만 표시)
+            formatted_departure_date = departure_date.strftime('%Y-%m-%d') if departure_date else "미정"
+            formatted_return_date = return_date.strftime('%Y-%m-%d') if return_date else "미정"
+
+            # 알림 제목과 내용 설정
+            title = "계약금 입금 요청"
+            body = f"출발일 : {formatted_departure_date} -> 도착일 : {formatted_return_date}의 견적의 계약금을 입금해주세요."
+
+            # `send_notification` 함수로 알림 전송
+            send_notification(user, title, body)
+
+            print(f"[USER NOTIFICATION] Successfully sent notification to user {user.username}")
+        except FCMToken.DoesNotExist:
+            print(f"[USER NOTIFICATION] No FCM token found for user {user.username}")
+        except Exception as e:
+            print(f"[USER NOTIFICATION] Error sending notification to user {user.username}: {e}")
+
+
+    @staticmethod
+    def send_admin_notification(estimate_id):
+        # 관리자에게 알림 전송
+        notification_data = {
+            "title": "계약금 입금 확인 요청",
+            "content": f"견적 {estimate_id}의 계약금 입금을 확인해주세요.",
+            "category": "일정",
+            "send_datetime": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        }
+        try:
+            response = requests.post(EstimateNotificationScheduler.RPA_D_SERVER_URL, json=notification_data)
+            if response.status_code == 201:
+                print(f"Admin notification sent for estimate {estimate_id}")
+            else:
+                print(f"Failed to send admin notification: {response.status_code} - {response.text}")
+        except Exception as e:
+            print(f"Error sending admin notification: {str(e)}")
+
+    @staticmethod
+    def send_notifications_for_pending_estimates():
+        # 계약금 입금 대기 상태인 견적 찾기
+        estimates = Estimate.objects.filter(status="계약금 입금 대기")
+        for estimate in estimates:
+            EstimateNotificationScheduler.send_user_notification(estimate.user, estimate.departure_date ,estimate.return_date)
+            EstimateNotificationScheduler.send_admin_notification(estimate.id)
+
+    @staticmethod
+    def schedule_jobs():
+        # 스케줄러 생성
+        scheduler = BackgroundScheduler()
+        # 매일 10시 실행
+        scheduler.add_job(EstimateNotificationScheduler.send_notifications_for_pending_estimates, 'cron', hour=10, minute=0)
+        # 매일 14시 실행
+        scheduler.add_job(EstimateNotificationScheduler.send_notifications_for_pending_estimates, 'cron', hour=14, minute=10)
+        scheduler.start()
+
+    # 수동 실행용 API 추가
+    def post(self, request):
+        try:
+            # 수동으로 알림 전송 작업 실행
+            self.send_notifications_for_pending_estimates()
+            return Response({
+                "result": "true",
+                "message": "알림 작업이 수동으로 실행되었습니다."
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "result": "false",
+                "message": f"오류 발생: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+# 서버 시작 시 스케줄러 실행
+EstimateNotificationScheduler.schedule_jobs()
 
 
