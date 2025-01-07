@@ -488,3 +488,71 @@ class EstimateNotificationScheduler(APIView):
 EstimateNotificationScheduler.schedule_jobs()
 
 
+# TRP에서 받은 예약확정 상태를 저장하고 유저에게 알림
+class EstimateStatusUpdateView(APIView):
+    permission_classes = [AllowAny]
+
+    def patch(self, request) :
+        # 요청 Body에서 estimate_id와 status 가져오기
+        estimate_id = request.data.get("estimate_id")
+        estimate_status = request.data.get("status")
+
+        if not estimate_id:
+            return Response({
+                "result": "false",
+                "message": "estimate_id가 요청에 포함되지 않았습니다."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        if not estimate_status:
+            return Response({
+                "result": "false",
+                "message": "status가 요청에 포함되지 않았습니다."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Estimate 객체 가져오기
+            estimate = Estimate.objects.get(id=estimate_id)
+
+            # 상태 업데이트
+            estimate.status = estimate_status
+            estimate.save()
+
+            # 유저 알림 전송
+            if estimate.status == "예약 완료":
+                self.notify_user(estimate)
+
+            return Response({
+                "result": "true",
+                "message": "견적 상태가 성공적으로 업데이트되었습니다.",
+                "data": {
+                    "estimate_id": estimate.id,
+                    "status": estimate.status
+                }
+            }, status=status.HTTP_200_OK)
+
+        except Estimate.DoesNotExist:
+            return Response({
+                "result": "false",
+                "message": "해당 견적을 찾을 수 없습니다."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+    def notify_user(self, estimate):
+        # 날짜 포맷팅 (일까지만 표시)
+        formatted_departure_date = estimate.departure_date.strftime('%Y-%m-%d') if estimate.departure_date else "미정"
+        formatted_return_date = estimate.return_date.strftime('%Y-%m-%d') if estimate.return_date else "미정"
+        
+        """
+        유저에게 상태 변경 알림 전송
+        """
+        title = "예약 완료 알림"
+        body = f"출발일 : {formatted_departure_date} > 도착일 : {formatted_return_date}이 예약 완료 되었습니다."
+
+        try:
+            send_notification(estimate.user, title, body)
+
+        except Exception as e:
+            return Response({
+                "result": "false",
+                "message": "알림 전송 실패"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+ 
