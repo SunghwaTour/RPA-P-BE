@@ -14,7 +14,7 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from firebase.models import FCMToken
 from firebase.send_message import send_notification
-from my_settings import ALLOWED_HOSTS
+from my_settings import ALLOWED_HOSTS, DEV4_SERVER , DEV_SERVER
 from django.http import HttpResponseForbidden
 
 # 견적 금액 조회
@@ -134,7 +134,7 @@ class EstimateView(APIView):
             estimate = serializer.save(user=request.user)
 
             # RPA-D 서버 알림 API 호출
-            rpad_url = "http://104.197.230.228:8000/user/notification"
+            rpad_url = f"{DEV4_SERVER}/user/notification"
             notification_data = {
                 "title": "새 견적 신청 알림",
                 "content": f"새로운 견적이 신청되었습니다. 견적 ID: {estimate.id}",
@@ -158,7 +158,7 @@ class EstimateView(APIView):
 
 
             # TRP 서버에 견적 데이터 전송 추가
-            trp_url = "http://104.197.230.228:8000/dispatch/estimates"  # TRP 서버 URL
+            trp_url = f"{DEV4_SERVER}/dispatch/estimates"  # TRP 서버 URL
 
             trp_payload = {
                 "estimate_id": estimate.id,
@@ -417,7 +417,7 @@ class ReviewListView(ListAPIView):
 
 # 10, 14시마다 유저에게는 입금 요청 알림을, 관리자에게는 입금 확인 알림을 보냄
 class EstimateNotificationScheduler(APIView):
-    RPA_D_SERVER_URL = "http://104.197.230.228:8000/user/notification"  # RPA-D 서버 URL
+    RPA_D_SERVER_URL = f"{DEV4_SERVER}/user/notification"  # RPA-D 서버 URL
 
     @staticmethod
     def send_user_notification(user, departure_date, return_date):
