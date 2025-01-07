@@ -14,6 +14,8 @@ import requests
 from apscheduler.schedulers.background import BackgroundScheduler
 from firebase.models import FCMToken
 from firebase.send_message import send_notification
+from my_settings import ALLOWED_HOSTS
+from django.http import HttpResponseForbidden
 
 # 견적 금액 조회
 class EstimatePriceView(APIView):
@@ -333,8 +335,14 @@ class EstimateDetailView(APIView):
     
     
     # trp에서 수정된 정보들 저장
-    permission_classes = [AllowAny]    
+    permission_classes = [AllowAny]  
+    ALLOWED_IPS = ALLOWED_HOSTS  # 허용할 IP 목록
+  
     def patch(self, request, estimate_id):
+        client_ip = self.get_client_ip(request)
+        if client_ip not in self.ALLOWED_IPS:
+            return HttpResponseForbidden("Access denied: Unauthorized IP")
+        
         try:
             # estimate_id를 기반으로 해당 견적 찾기
             estimate = Estimate.objects.get(id=estimate_id)
@@ -358,9 +366,6 @@ class EstimateDetailView(APIView):
                 "result": "true",
                 "message": "견적이 성공적으로 수정되었습니다.",
                 "data": {
-                    "bus_type": updated_estimate.vehicle_info.bus_type,
-                    "bus_count": updated_estimate.vehicle_info.bus_count,
-                    "price": updated_estimate.virtual_estimate.price,
                     "status": updated_estimate.status
                 }
             }, status=status.HTTP_200_OK)
@@ -371,6 +376,11 @@ class EstimateDetailView(APIView):
             "message": "입력 데이터가 유효하지 않습니다.",
             "errors": serializer.errors
         }, status=status.HTTP_400_BAD_REQUEST)
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0]
+        return request.META.get('REMOTE_ADDR')
 
 
 # 리뷰 등록(POST)
@@ -491,8 +501,13 @@ EstimateNotificationScheduler.schedule_jobs()
 # TRP에서 받은 예약확정 상태를 저장하고 유저에게 알림
 class EstimateStatusUpdateView(APIView):
     permission_classes = [AllowAny]
+    ALLOWED_IPS = ALLOWED_HOSTS  # 허용할 IP 목록
 
     def patch(self, request) :
+        client_ip = self.get_client_ip(request)
+        if client_ip not in self.ALLOWED_IPS:
+            return HttpResponseForbidden("Access denied: Unauthorized IP")
+        
         # 요청 Body에서 estimate_id와 status 가져오기
         estimate_id = request.data.get("estimate_id")
         estimate_status = request.data.get("status")
@@ -523,7 +538,7 @@ class EstimateStatusUpdateView(APIView):
 
             return Response({
                 "result": "true",
-                "message": "견적 상태가 성공적으로 업데이트되었습니다.",
+                "message": "견적 상태가 변경되어 예약이 완료되었습니다",
                 "data": {
                     "estimate_id": estimate.id,
                     "status": estimate.status
@@ -555,4 +570,10 @@ class EstimateStatusUpdateView(APIView):
                 "result": "false",
                 "message": "알림 전송 실패"
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0]
+        return request.META.get('REMOTE_ADDR')
  
