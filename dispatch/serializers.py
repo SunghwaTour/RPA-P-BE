@@ -215,3 +215,41 @@ class ReviewListSerializer(serializers.ModelSerializer):
     def get_files(self, obj):
         # 각 파일의 URL을 문자열 리스트로 반환
         return [f"{settings.MEDIA_URL}{file.file}" for file in obj.files.all()]
+
+# 견적 수정 
+class EstimateUpdateSerializer(serializers.ModelSerializer):
+    bus_type = serializers.CharField(write_only=True, required=False)
+    bus_count = serializers.IntegerField(write_only=True, required=False)
+    price = serializers.IntegerField(write_only=True, required=False)
+    status = serializers.CharField(required=False)  # Status 필드 추가
+
+    class Meta:
+        model = Estimate
+        fields = ["bus_type", "bus_count", "price", 'status']
+
+    def update(self, instance, validated_data):
+        # 차량 정보 업데이트
+        if "bus_type" in validated_data or "bus_count" in validated_data:
+            if instance.vehicle_info:
+                instance.vehicle_info.bus_type = validated_data.get("bus_type", instance.vehicle_info.bus_type)
+                instance.vehicle_info.bus_count = validated_data.get("bus_count", instance.vehicle_info.bus_count)
+                instance.vehicle_info.save()
+            else:
+                # VehicleInfo가 없는 경우 새로 생성
+                instance.vehicle_info = VehicleInfo.objects.create(
+                    bus_type=validated_data.get("bus_type", ""),
+                    bus_count=validated_data.get("bus_count", 1)  # 기본값 1
+                )
+
+        # 가격 정보 업데이트
+        if "price" in validated_data and instance.virtual_estimate:
+            instance.virtual_estimate.price = validated_data.get("price", instance.virtual_estimate.price)
+            instance.virtual_estimate.save()
+
+        # 상태 정보 업데이트
+        if "status" in validated_data:
+            instance.status = validated_data.get("status", instance.status)
+
+        # 저장 후 객체 반환
+        instance.save()
+        return instance

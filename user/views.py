@@ -13,7 +13,7 @@ from datetime import datetime
 from config.pagination import Pagination
 from .models import Notification
 from .serializers import NotificationSerializer
-from firebase.send_message import send_fcm_notification
+# from firebase.send_message import send_fcm_notification
 from firebase.models import FCMToken
 
 # 로그인 or 회원가입
@@ -224,35 +224,6 @@ class VerifyCodeView(APIView):
                 'result': False,
                 'message': '잘못된 인증 코드입니다.'
             }, status=status.HTTP_400_BAD_REQUEST)
-        
-# 알림 전송(테스트 용)
-class SendNotificationView(APIView):
-    def post(self, request):
-        user_id = request.data.get("user_id")  # 사용자 ID
-        title = request.data.get("title")      # 알림 제목
-        body = request.data.get("body")        # 알림 내용
-        category = request.data.get("category", "기타")  # 카테고리 기본값 설정
-
-        # 사용자 FCM 토큰 가져오기
-        try:
-            fcm_token = FCMToken.objects.get(user=user_id).token
-        except FCMToken.DoesNotExist:
-            return Response({"error": "FCM Token not found for the user."}, status=status.HTTP_404_NOT_FOUND)
-
-        # 알림 전송
-        if True :
-        # if send_fcm_notification(fcm_token, title, body):
-            # 보낸 알림을 저장
-            Notification.objects.create(
-                user_id=user_id,
-                title=title,
-                content=body,
-                category=category,
-                is_read=False,  # 처음에는 읽지 않은 상태로 저장
-            )
-            return Response({"message": "Notification sent and saved successfully."}, status=status.HTTP_200_OK)
-        else:
-            return Response({"error": "Failed to send notification."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 # 알림 목록(get), 알림 읽음 여부(patch)
 class NotificationView(APIView):

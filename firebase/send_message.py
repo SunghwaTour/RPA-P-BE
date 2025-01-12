@@ -1,23 +1,29 @@
 from firebase_admin import messaging
+from firebase_admin.exceptions import FirebaseError
+from .models import FCMToken
 
-def send_fcm_notification(token, title, body):
-    """
-    FCM 알림을 전송하는 함수
-    :param token: FCM 디바이스 토큰
-    :param title: 알림 제목
-    :param body: 알림 내용
-    """
-    message = messaging.Message(
-        notification=messaging.Notification(
-            title=title,  # 알림 제목
-            body=body,    # 알림 내용
-        ),
-        token=token,  # 수신 디바이스의 FCM 토큰
-    )
+def send_notification(user, title, body):
     try:
+        # 사용자에 대한 FCM 토큰 가져오기
+        fcm_token = FCMToken.objects.get(user=user).token
+
+        # 알림 메시지 구성
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body,
+            ),
+            token=fcm_token,  # 클라이언트의 FCM 토큰
+        )
+
+        # Firebase로 알림 전송
         response = messaging.send(message)
         print(f"Successfully sent message: {response}")
-        return True
+
+    except FCMToken.DoesNotExist:
+        print(f"No FCM token found for user {user}")
+    except FirebaseError as fe:
+        print(f"Firebase error occurred: {fe}")
     except Exception as e:
-        print(f"Failed to send message: {e}")
-        return False
+        print(f"Error sending notification: {e}")
+
