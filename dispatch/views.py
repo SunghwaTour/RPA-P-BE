@@ -235,6 +235,7 @@ class EstimateView(APIView):
         # 쿼리 파라미터 가져오기
         page = request.query_params.get("page", 1)
         is_finished = request.query_params.get("is_finished")
+        is_value_changed = request.query_params.get("is_value_changed")
 
         # 필터링
         estimates = Estimate.objects.filter(user=request.user)
@@ -242,6 +243,11 @@ class EstimateView(APIView):
             estimates = estimates.filter(is_finished=True)
         elif is_finished == "false":
             estimates = estimates.filter(is_finished=False)
+
+        if is_value_changed == "true":
+            estimates = estimates.filter(is_value_changed=True)
+        elif is_value_changed == "false":
+            estimates = estimates.filter(is_value_changed=False)
 
         # 페이징 처리
         paginator = Paginator(estimates, 10)  # 페이지당 10개

@@ -38,12 +38,7 @@ class Pay(models.Model):
 
 # 차량 정보
 class VehicleInfo(models.Model):
-    VEHICLE_TYPE_CHOICES = [
-        ("우등", "우등"),
-        ("일반", "일반"),
-    ]
-
-    bus_type = models.CharField(max_length=10, choices=VEHICLE_TYPE_CHOICES)  # 차량 유형
+    bus_type = models.CharField(max_length=255, null=True, blank=True)  # 차량 유형
     bus_seater = models.CharField(max_length=10, default="45인승")  # 버스 좌석 수
     bus_count = models.IntegerField(default=1)  # 버스 대수
 
